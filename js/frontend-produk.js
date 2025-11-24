@@ -32,32 +32,40 @@ function createProductElement(product) {
         console.log('Product card clicked, navigating to detail page for product ID:', product.id);
         window.location.href = `detail.php?id=${product.id}`;
     });
+    s
+    // Set up event delegation for child elements
+    const setElementInteractivity = (parent, selector, isInteractive, clickHandler = null) => {
+        const elements = [...parent.querySelectorAll(selector)];
+        elements.forEach(el => {
+            el.style.pointerEvents = isInteractive ? 'auto' : 'none';
+            if (isInteractive && clickHandler) {
+                el.addEventListener('click', clickHandler);
+            }
+        });
+    };
+
+    // Make all child elements non-interactive
+    setElementInteractivity(productElement, '*', false);
     
-    // Make sure all child elements are clickable
-    const childElements = productElement.querySelectorAll('*');
-    childElements.forEach(el => {
-        el.style.pointerEvents = 'none'; // Allow click to pass through to parent
-    });
-    
-    // Make sure images are still interactive
-    const images = productElement.querySelectorAll('img');
-    images.forEach(img => {
-        img.style.pointerEvents = 'auto';
-        img.addEventListener('click', (e) => {
+    // Make images interactive with click handler
+    setElementInteractivity(
+        productElement, 
+        'img', 
+        true, 
+        (e) => {
             e.stopPropagation();
             console.log('Image clicked, navigating to detail page for product ID:', product.id);
             window.location.href = `detail.php?id=${product.id}`;
-        });
-    });
+        }
+    );
     
-    // Prevent price click from triggering the parent click
+    // Handle price element separately
     const priceElement = productElement.querySelector('.produk-harga');
     if (priceElement) {
         priceElement.style.pointerEvents = 'auto';
         priceElement.addEventListener('click', (e) => {
             e.stopPropagation();
             console.log('Price clicked, preventing navigation');
-            // Don't navigate, just stop the event
         });
     }
     

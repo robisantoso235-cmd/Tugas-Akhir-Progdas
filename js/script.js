@@ -36,63 +36,83 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Menu management functions
+    const closeMenu = () => {
+        navMenu.classList.remove("active", "menu-active");
+        hamburger.classList.remove("open");
+        hamburger.setAttribute('aria-expanded', 'false');
+    };
+
     // Close menu when clicking on a link
-    navMenu.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => {
-            navMenu.classList.remove("active", "menu-active");
-            hamburger.classList.remove("open");
-            hamburger.setAttribute('aria-expanded', 'false');
-        });
+    const menuLinks = Array.from(navMenu.querySelectorAll("a"));
+    menuLinks.forEach(link => {
+        link.addEventListener("click", closeMenu);
     });
 
     // Close menu when clicking outside
     document.addEventListener("click", (e) => {
         if (!e.target.closest(".navbar")) {
-            navMenu.classList.remove("active", "menu-active");
-            hamburger.classList.remove("open");
-            hamburger.setAttribute('aria-expanded', 'false');
+            closeMenu();
         }
     });
 
-    // Close menu on scroll
-    window.addEventListener("scroll", () => {
-        navMenu.classList.remove("active", "menu-active");
-        hamburger.classList.remove("open");
-        hamburger.setAttribute('aria-expanded', 'false');
-    });
+    // Debounce function for scroll events
+    const debounce = (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+
+    // Close menu on scroll with debounce
+    window.addEventListener("scroll", debounce(closeMenu, 100));
 
     // Fade-in on scroll for services section
     const layanan = document.querySelector('.layanan');
     const boxes = document.querySelectorAll('.layanan-box .box');
 
-    if (layanan) {
+    if (layanan && boxes.length) {
+        const animateBoxes = (elements, show = true, delay = 120) => {
+            const elementsArray = show ? Array.from(elements) : Array.from(elements).reverse();
+            elementsArray.forEach((element, index) => {
+                const currentDelay = index * delay;
+                element.style.setProperty('--delay', `${currentDelay}ms`);
+                setTimeout(
+                    () => element.classList[show ? 'add' : 'remove']('show'),
+                    currentDelay
+                );
+            });
+            return elementsArray.length * delay;
+        };
+
+        const handleIntersection = (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    layanan.classList.add('show');
+                    animateBoxes(boxes, true, 120);
+                } else {
+                    const hideDelay = animateBoxes(boxes, false, 80);
+                    setTimeout(() => {
+                        layanan.classList.remove('show');
+                    }, hideDelay + 60);
+                }
+            });
+        };
+
         if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        layanan.classList.add('show');
-                        boxes.forEach((b, i) => {
-                            b.style.setProperty('--delay', `${i * 120}ms`);
-                            setTimeout(() => b.classList.add('show'), i * 120);
-                        });
-                    } else {
-                        const rev = Array.from(boxes).reverse();
-                        rev.forEach((b, i) => {
-                            setTimeout(() => b.classList.remove('show'), i * 80);
-                        });
-                        const totalHideDelay = rev.length * 80 + 60;
-                        setTimeout(() => layanan.classList.remove('show'), totalHideDelay);
-                    }
-                });
-            }, { threshold: 0.15 });
+            const observer = new IntersectionObserver(handleIntersection, { 
+                threshold: 0.15 
+            });
             observer.observe(layanan);
         } else {
             // Fallback for browsers that don't support IntersectionObserver
             layanan.classList.add('show');
-            boxes.forEach((b, i) => {
-                b.style.setProperty('--delay', `${i * 120}ms`);
-                setTimeout(() => b.classList.add('show'), i * 120);
-            });
+            animateBoxes(boxes, true, 120);
         }
     }
 
